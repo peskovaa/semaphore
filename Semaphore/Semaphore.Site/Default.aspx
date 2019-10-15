@@ -19,22 +19,22 @@
             height: 100px;
             border-radius: 50px;
             position: relative;
+            background: rgb(175, 175, 175);
+        }
+        .semaphore .red-circle.active {
             background: red;
         }
-        .semaphore .red-circle {
-            background: red;
-        }
-        .semaphore .yellow-circle {
+        .semaphore .yellow-circle.active {
             background: yellow;
         }
-        .semaphore .green-circle {
+        .semaphore .green-circle.active {
             background: green;
         }
     </style>
 </head>
 <body>
     <form id="form1" runat="server">
-        <ap:Semaphore ID="semaphore" runat="server" />
+        <ap:Semaphore ID="Semaphore" ActiveColor="Red" runat="server" />
     </form>
 </body>
 </html>
