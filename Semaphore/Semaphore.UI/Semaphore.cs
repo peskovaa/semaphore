@@ -1,34 +1,46 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Specialized;
 using System.Web.UI;
 using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
 
 namespace Semaphore.UI {
+
     public enum SemaphoreColor { Red, Yellow, Green };
 
-    public class Semaphore : WebControl {
+    public class Semaphore : WebControl, IPostBackDataHandler, INamingContainer {
         const string
             SemaphorecssClassName = "semaphore",
             CircleCssClassName = "circle",
             RedCircleCssClassName = "red-circle",
             YellowCircleCssClassName = "yellow-circle",
-            GreenCircleCssClassName = "green-circle",
-            ActiveCircleCssClassName = "active";
+            GreenCircleCssClassName = "green-circle";
+
+        const string StateInputId = "State";
 
         public Semaphore()
             : base(HtmlTextWriterTag.Div) {
         }
 
-        public SemaphoreColor ActiveColor { get; set; }
+        SemaphoreColor activeColor;
+        public SemaphoreColor ActiveColor {
+            get { return activeColor; }
+            set {
+                if (activeColor == value)
+                    return;
+                ChildControlsCreated = false;
+                activeColor = value;
+            }
+        }
 
         protected WebControl RedCircle { get; private set; }
         protected WebControl YellowCircle { get; private set; }
         protected WebControl GreenCircle { get; private set; }
+        protected HtmlInputHidden HiddenField { get; private set; }
 
-        protected override void CreateChildControls() {
-            if (!string.IsNullOrEmpty(CssClass))
-                CssClass += " ";
-            CssClass += SemaphorecssClassName;
+        protected override void CreateChildControls(){
+            CssClass = SemaphorecssClassName;
 
             RedCircle = CreateCirclye(RedCircleCssClassName);
             Controls.Add(RedCircle);
@@ -39,30 +51,37 @@ namespace Semaphore.UI {
             GreenCircle = CreateCirclye(GreenCircleCssClassName);
             Controls.Add(GreenCircle);
 
-            SetActiveColorToContol();
-        }
-
-        protected void SetActiveColorToContol() {
-            var activeCircleControl = GetActiveCircleControl();
-            activeCircleControl.CssClass += $" {ActiveCircleCssClassName}";
-        }
-
-        WebControl GetActiveCircleControl() {
-            switch (ActiveColor) {
-                case SemaphoreColor.Red:
-                    return RedCircle;
-                case SemaphoreColor.Yellow:
-                    return YellowCircle;
-                case SemaphoreColor.Green:
-                    return GreenCircle;
-            }
-            throw new NotImplementedException();
-        }
+            HiddenField = new HtmlInputHidden{
+                ID = StateInputId,
+                Value = (activeColor.ToString("g")).ToLower()
+            };
+            Controls.Add(HiddenField);
+         }
 
         WebControl CreateCirclye(string coloredCircleCssClassName) {
             var circle = new WebControl(HtmlTextWriterTag.Div);
             circle.CssClass = $"{CircleCssClassName} {coloredCircleCssClassName}";
             return circle;
+        }
+
+        protected override void OnInit(EventArgs e) {
+            base.OnInit(e);
+            Page.RegisterRequiresPostBack(this);
+        }
+
+        public bool LoadPostData(string postDataKey, NameValueCollection postCollection) {
+            var stateKey = ClientID + "$" + StateInputId;
+            var rawState = postCollection[stateKey];
+            if (!string.IsNullOrEmpty(rawState)) {
+                SemaphoreColor newSemaphoreColor;
+                if (Enum.TryParse(rawState, true, out newSemaphoreColor))
+                    this.ActiveColor = newSemaphoreColor;
+            }
+            return true;
+        }
+
+        public void RaisePostDataChangedEvent() {
+            
         }
     }
 }
